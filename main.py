@@ -91,6 +91,8 @@ async def on_message(message):
     await bot.process_commands(message)
 
 # --- CÁC LỆNH CỦA BOT ---
+# THAY THẾ TOÀN BỘ HÀM PLAY CŨ BẰNG HÀM NÀY
+
 @bot.command(name='play', help='Phát nhạc hoặc thêm vào hàng đợi')
 async def play(ctx, *, url):
     if not ctx.message.author.voice:
@@ -106,11 +108,21 @@ async def play(ctx, *, url):
         await ctx.voice_client.move_to(voice_channel)
         
     async with ctx.typing():
-        ydl_opts = {'format': 'bestaudio', 'noplaylist':'True'}
+        # Các tùy chọn mới để tránh bị YouTube chặn
+        ydl_opts = {
+            'format': 'bestaudio/best',
+            'noplaylist': True,
+            'quiet': True,
+            'no_warnings': True,
+            'default_search': 'auto',
+            'source_address': '0.0.0.0' # Ưu tiên dùng IPv4
+        }
+        
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             try:
                 info = ydl.extract_info(f"ytsearch:{url}", download=False)['entries'][0]
-            except Exception:
+            except Exception as e:
+                print(e) # In lỗi ra log của Render để bạn xem nếu cần
                 await ctx.send("Bot không tìm thấy bài hát. Hãy thử lại với tên khác.")
                 return
         
@@ -190,4 +202,5 @@ async def resume(ctx):
         await ctx.send("Bot không có bài hát nào đang tạm dừng.")
 
 # --- CHẠY BOT ---
+
 bot.run(TOKEN)
