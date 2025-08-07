@@ -14,5 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Sao chép toàn bộ code còn lại (main.py) vào
 COPY . .
 
+EXPOSE 8080
 # Lệnh để chạy bot khi container khởi động
+
 CMD ["python", "main.py"]
