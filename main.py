@@ -93,6 +93,8 @@ async def on_message(message):
 # --- CÁC LỆNH CỦA BOT ---
 # THAY THẾ TOÀN BỘ HÀM PLAY CŨ BẰNG HÀM NÀY
 
+# THAY THẾ TOÀN BỘ HÀM PLAY CŨ BẰNG HÀM NÀY
+
 @bot.command(name='play', help='Phát nhạc hoặc thêm vào hàng đợi')
 async def play(ctx, *, url):
     if not ctx.message.author.voice:
@@ -108,22 +110,28 @@ async def play(ctx, *, url):
         await ctx.voice_client.move_to(voice_channel)
         
     async with ctx.typing():
-        # Các tùy chọn mới để tránh bị YouTube chặn
+        # Tùy chọn cuối cùng: Dùng cookie để không bị chặn
         ydl_opts = {
             'format': 'bestaudio/best',
             'noplaylist': True,
             'quiet': True,
             'no_warnings': True,
             'default_search': 'auto',
-            'source_address': '0.0.0.0' # Ưu tiên dùng IPv4
+            'source_address': '0.0.0.0', # Ưu tiên dùng IPv4
+            # Đường dẫn đến file cookie an toàn trên Render
+            'cookiefile': '/etc/secrets/cookies.txt' 
         }
         
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             try:
                 info = ydl.extract_info(f"ytsearch:{url}", download=False)['entries'][0]
             except Exception as e:
-                print(e) # In lỗi ra log của Render để bạn xem nếu cần
-                await ctx.send("Bot không tìm thấy bài hát. Hãy thử lại với tên khác.")
+                print(e)
+                # Kiểm tra xem có phải lỗi do cookie không
+                if 'HTTP Error 429' in str(e) or 'This content isn’t available' in str(e):
+                     await ctx.send("Lỗi: YouTube đang chặn yêu cầu. Có thể cookie đã hết hạn hoặc không hợp lệ.")
+                else:
+                     await ctx.send("Bot không tìm thấy bài hát. Hãy thử lại với tên khác.")
                 return
         
         song = {'title': info['title'], 'url': info['url']}
@@ -204,3 +212,4 @@ async def resume(ctx):
 # --- CHẠY BOT ---
 
 bot.run(TOKEN)
+
